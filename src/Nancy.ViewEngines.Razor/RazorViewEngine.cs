@@ -41,10 +41,11 @@
         /// <param name="configuration">The <see cref="IRazorConfiguration"/> that should be used by the engine.</param>
         public RazorViewEngine(IRazorConfiguration configuration)
         {
+            var hostFactory = new NancyRazorEngineHostFactory();
             this.viewRenderers = new List<IRazorViewRenderer>
             {
-                new CSharp.CSharpRazorViewRenderer(),
-                new VisualBasic.VisualBasicRazorViewRenderer()
+                new CSharp.CSharpRazorViewRenderer(hostFactory),
+                new VisualBasic.VisualBasicRazorViewRenderer(hostFactory)
             };
 
             this.razorConfiguration = configuration;
@@ -135,7 +136,7 @@
         {
             var renderer = this.viewRenderers.First(x => x.Extension.Equals(extension, StringComparison.OrdinalIgnoreCase));
 
-            var engine = this.GetRazorTemplateEngine(renderer.Host);
+            var engine = this.GetRazorTemplateEngine(renderer.GetHost(viewLocationResult.Location));
 
             var razorResult = engine.GenerateCode(reader, null, null, "roo");
 
