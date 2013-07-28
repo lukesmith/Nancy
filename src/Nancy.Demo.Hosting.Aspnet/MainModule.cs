@@ -105,6 +105,11 @@ namespace Nancy.Demo.Hosting.Aspnet
 
             Get["/razor2"] = _ => new Razor2();
 
+            Get["/razor-helpers"] = _ =>
+            {
+                return View["razor-helpers.cshtml"];
+            };
+
             Get["/ssve"] = x =>
             {
                 var model = new RatPack { FirstName = "You" };
