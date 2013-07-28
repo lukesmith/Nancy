@@ -9,7 +9,7 @@
     {
         public NancyRazorCodeEngineHost(RazorCodeLanguage language, string viewLocation) : base(language)
         {
-            this.DefaultBaseClass = typeof(NanzyRazorCodeBase).FullName;
+            this.DefaultBaseClass = typeof(NancyRazorCodeBase).FullName;
             this.DefaultClassName = this.GetClassName(viewLocation);
             this.StaticHelpers = true;
         }
