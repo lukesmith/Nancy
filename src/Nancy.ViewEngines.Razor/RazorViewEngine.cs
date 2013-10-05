@@ -47,11 +47,6 @@
             };
 
             this.razorConfiguration = configuration;
-
-            foreach (var renderer in this.viewRenderers)
-            {
-                this.AddDefaultNameSpaces(renderer.GetHost(string.Empty));
-            }
         }
 
         /// <summary>
