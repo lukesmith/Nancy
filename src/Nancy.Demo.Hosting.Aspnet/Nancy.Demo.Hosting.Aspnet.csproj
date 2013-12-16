@@ -118,6 +118,7 @@
     <Content Include="Views\razor2.cshtml" />
     <Content Include="App_Code\CodeHelper.cshtml" />
     <Content Include="Views\razor-helpers.cshtml" />
+    <Content Include="Views\nustachePartial.nustache" />
     <None Include="Views\FileUpload.sshtml">
       <SubType>Designer</SubType>
     </None>

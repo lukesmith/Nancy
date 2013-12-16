@@ -49,7 +49,8 @@ namespace Nancy.ViewEngines.SuperSimpleViewEngine
                 return "[ERR!]";
             }
 
-            return viewLocationResult.Contents.Invoke().ReadToEnd();
+            using(var reader = viewLocationResult.Contents.Invoke())
+                return reader.ReadToEnd();
         }
 
         /// <summary>
@@ -81,7 +82,7 @@ namespace Nancy.ViewEngines.SuperSimpleViewEngine
         {
             var tokenKeyValue = this.renderContext.GetCsrfToken();
 
-            return string.Format("<input type=\"hidden\" name=\"{0}\" value=\"{1}\"", tokenKeyValue.Key, tokenKeyValue.Value);
+            return string.Format("<input type=\"hidden\" name=\"{0}\" value=\"{1}\" />", tokenKeyValue.Key, tokenKeyValue.Value);
         }
     }
 }

@@ -16,7 +16,7 @@
     /// </summary>
     /// <typeparam name="TContainer">IoC container type</typeparam>
     [SuppressMessage("Microsoft.StyleCop.CSharp.DocumentationRules", "SA1623:PropertySummaryDocumentationMustMatchAccessors", Justification = "Abstract base class - properties are described differently for overriding.")]
-    public abstract class NancyBootstrapperBase<TContainer> : INancyBootstrapper, INancyModuleCatalog
+    public abstract class NancyBootstrapperBase<TContainer> : INancyBootstrapper, INancyModuleCatalog, IDisposable
         where TContainer : class
     {
         /// <summary>
@@ -100,7 +100,7 @@
                     this.modules 
                     ?? 
                     (this.modules = AppDomainAssemblyTypeScanner
-                                        .TypesOf<INancyModule>(true)
+                                        .TypesOf<INancyModule>(ScanMode.ExcludeNancy)
                                         .NotOfType<DiagnosticModule>()
                                         .Select(t => new ModuleRegistration(t))
                                         .ToArray());
@@ -136,7 +136,7 @@
         {
             get
             {
-                return AppDomainAssemblyTypeScanner.TypesOf<ITypeConverter>(true);
+                return AppDomainAssemblyTypeScanner.TypesOf<ITypeConverter>(ScanMode.ExcludeNancy);
             }
         }
 
@@ -145,7 +145,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> BodyDeserializers
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IBodyDeserializer>(true); }
+            get { return AppDomainAssemblyTypeScanner.TypesOf<IBodyDeserializer>(ScanMode.ExcludeNancy); }
         }
 
         /// <summary>
@@ -362,6 +362,34 @@
             engine.RequestPipelinesFactory = this.InitializeRequestPipelines;
 
             return engine;
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
+        public void Dispose()
+        {
+            // Only dispose if we're initialised, prevents possible issue with recursive disposing.
+            if (!this.initialised)
+            {
+                return;
+            }
+
+            var container = this.ApplicationContainer as IDisposable;
+
+            if (container == null)
+            {
+                return;
+            }
+
+            try
+            {
+                container.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
         }
 
         /// <summary>

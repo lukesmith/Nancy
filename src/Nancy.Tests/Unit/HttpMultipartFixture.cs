@@ -60,9 +60,8 @@ namespace Nancy.Tests.Unit
             };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(stream), "http");
-
-
+            var request = new Request("POST", new Url { Path = "/" }, CreateRequestStream(stream), headers);
+            
             // Then
             var fileValue = request.Files.Single().Value;
             var actualBytes = new byte[fileValue.Length];
@@ -91,7 +90,37 @@ namespace Nancy.Tests.Unit
             };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(stream), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(stream), headers);
+
+
+            // Then
+            var fileValue = request.Files.Single().Value;
+            var actualBytes = new byte[fileValue.Length];
+            fileValue.Read(actualBytes, 0, (int)fileValue.Length);
+
+            var actual = Encoding.ASCII.GetString(actualBytes);
+
+            actual.ShouldEqual(expected);
+        }
+
+        [Fact]
+        public void Should_have_a_file_with_the_correct_data_in_it_using_quotes()
+        {
+            // Given
+            var expected = "wazaa";
+
+            var stream = new MemoryStream(BuildMultipartFileValues(new Dictionary<string, Tuple<string, string, string>>
+            {
+                { "sample.txt", new Tuple<string, string, string>("content/type", expected, "name")}
+            }, null, null, true));
+
+            var headers = new Dictionary<string, IEnumerable<string>>
+            {
+                { "content-type", new[] { "multipart/form-data; boundary=\"----NancyFormBoundary\"" } }
+            };
+
+            // When
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(stream), headers);
 
 
             // Then
@@ -122,7 +151,7 @@ namespace Nancy.Tests.Unit
             };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(stream), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(stream), headers);
 
 
             // Then
@@ -150,9 +179,8 @@ namespace Nancy.Tests.Unit
             };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(stream), "http");
-
-
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(stream), headers);
+            
             // Then
             var fileValue = request.Files.Single().Value;
             var actualBytes = new byte[fileValue.Length];
@@ -233,20 +261,28 @@ namespace Nancy.Tests.Unit
             }
         }
 
-        private static byte[] BuildMultipartFileValues(Dictionary<string, Tuple<string, string, string>> formValues, string preamble, string epilogue)
+        private static byte[] BuildMultipartFileValues(Dictionary<string, Tuple<string, string, string>> formValues, string preamble, string epilogue, bool surroundWithQuotes = false)
         {
             var boundaryBuilder = new StringBuilder();
 
             boundaryBuilder.Append(preamble);
             foreach (var key in formValues.Keys)
             {
+                var name = key;
+                var filename = formValues[key].Item3;
+                if (surroundWithQuotes)
+                {
+                    name = "\"" + name + "\"";
+                    filename = "\"" + filename + "\"";   
+                }
+
                 boundaryBuilder.Append('\r');
                 boundaryBuilder.Append('\n');
                 boundaryBuilder.Append("--");
                 boundaryBuilder.Append("----NancyFormBoundary");
                 boundaryBuilder.Append('\r');
                 boundaryBuilder.Append('\n');
-                boundaryBuilder.AppendFormat("Content-Disposition: form-data; name=\"{1}\"; filename=\"{0}\"", key, formValues[key].Item3);
+                boundaryBuilder.AppendFormat("Content-Disposition: form-data; name={1}; filename={0}", name, filename);
                 boundaryBuilder.Append('\r');
                 boundaryBuilder.Append('\n');
                 boundaryBuilder.AppendFormat("Content-Type: {0}", formValues[key].Item1);

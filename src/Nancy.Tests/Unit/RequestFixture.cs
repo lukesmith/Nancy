@@ -59,7 +59,7 @@ namespace Nancy.Tests.Unit
                 new Dictionary<string, IEnumerable<string>> { { "content-type", new[] { "application/x-www-form-urlencoded" } } };
 
             // When
-            var request = new Request("POST", "/", headers, memory, "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             request.Method.ShouldEqual("GET");
@@ -84,7 +84,7 @@ namespace Nancy.Tests.Unit
                 new Dictionary<string, IEnumerable<string>> { { "content-type", new[] { "application/x-www-form-urlencoded" } } };
 
             // When
-            var request = new Request(method, "/", headers, memory, "http");
+            var request = new Request(method, new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             request.Method.ShouldEqual(method);
@@ -159,7 +159,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("GET", "/", headers, CreateRequestStream(), "http");
+            var request = new Request("GET", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(), headers);
 
             // Then
             request.Headers.ContentType.ShouldNotBeEmpty();
@@ -172,7 +172,7 @@ namespace Nancy.Tests.Unit
             var body = CreateRequestStream();
 
             // When
-            var request = new Request("GET", "/", new Dictionary<string, IEnumerable<string>>(), body, "http");
+            var request = new Request("GET", new Url { Path = "/", Scheme = "http" }, body, new Dictionary<string, IEnumerable<string>>());
 
             // Then
             request.Body.ShouldBeSameAs(body);
@@ -196,7 +196,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, memory, "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             ((string)request.Form.name).ShouldEqual("John Doe");
@@ -220,7 +220,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, memory, "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             ((string)request.Form.name).ShouldEqual("John Doe");
@@ -244,11 +244,115 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             ((string)request.Form.name).ShouldEqual("John Doe");
             ((string)request.Form.age).ShouldEqual("42");
+        }
+
+        [Fact]
+        public void Should_respect_case_insensitivity_when_extracting_form_data_from_body_when_content_type_is_x_www_form_urlencoded()
+        {
+            // Given
+            StaticConfiguration.CaseSensitive = false;
+            const string bodyContent = "key=value&key=value&KEY=VALUE";
+            var memory = CreateRequestStream();
+            var writer = new StreamWriter(memory);
+            writer.Write(bodyContent);
+            writer.Flush();
+            memory.Position = 0;
+
+            var headers =
+                new Dictionary<string, IEnumerable<string>>
+                {
+                    { "content-type", new[] { "application/x-www-form-urlencoded" } }
+                };
+
+            // When
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
+
+            // Then
+            ((string)request.Form.key).ShouldEqual("value,value,VALUE");
+            ((string)request.Form.KEY).ShouldEqual("value,value,VALUE");
+        }
+
+        [Fact]
+        public void Should_respect_case_sensitivity_when_extracting_form_data_from_body_when_content_type_is_x_www_form_urlencoded()
+        {
+            // Given
+            StaticConfiguration.CaseSensitive = true;
+            const string bodyContent = "key=value&key=value&KEY=VALUE";
+            var memory = CreateRequestStream();
+            var writer = new StreamWriter(memory);
+            writer.Write(bodyContent);
+            writer.Flush();
+            memory.Position = 0;
+
+            var headers =
+                new Dictionary<string, IEnumerable<string>>
+                {
+                    { "content-type", new[] { "application/x-www-form-urlencoded" } }
+                };
+
+            // When
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
+
+            // Then
+            ((string)request.Form.key).ShouldEqual("value,value");
+            ((string)request.Form.KEY).ShouldEqual("VALUE");
+        }
+
+        [Fact]
+        public void Should_respect_case_insensitivity_when_extracting_form_data_from_body_when_content_type_is_multipart_form_data()
+        {
+            // Given
+            StaticConfiguration.CaseSensitive = false;
+            var memory =
+                new MemoryStream(BuildMultipartFormValues(new Dictionary<string, string>(StringComparer.InvariantCulture)
+                {
+                    { "key", "value" },
+                    { "KEY", "VALUE" }
+                }));
+
+            var headers =
+                new Dictionary<string, IEnumerable<string>>
+                {
+                    { "content-type", new[] { "multipart/form-data; boundary=----NancyFormBoundary" } }
+                };
+
+            // When
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
+
+            // Then
+            ((string)request.Form.key).ShouldEqual("value,VALUE");
+            ((string)request.Form.KEY).ShouldEqual("value,VALUE");
+        }
+
+        [Fact]
+        public void Should_respect_case_sensitivity_when_extracting_form_data_from_body_when_content_type_is_multipart_form_data()
+        {
+            // Given
+            StaticConfiguration.CaseSensitive = true;
+            var memory =
+                new MemoryStream(BuildMultipartFormValues(new Dictionary<string, string>(StringComparer.InvariantCulture)
+                {
+                    { "key", "value" },
+                    { "KEY", "VALUE" }
+                }));
+
+            var headers =
+                new Dictionary<string, IEnumerable<string>>
+                {
+                    { "content-type", new[] { "multipart/form-data; boundary=----NancyFormBoundary" } }
+                };
+
+            // When
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
+
+            // Then
+            ((string)request.Form.key).ShouldEqual("value");
+            ((string)request.Form.KEY).ShouldEqual("VALUE");
         }
 
         [Fact]
@@ -268,7 +372,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             request.Files.ShouldHaveCount(1);
@@ -291,7 +395,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             request.Files.First().ContentType.ShouldEqual("content/type");
@@ -314,7 +418,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             request.Files.First().Name.ShouldEqual("sample.txt");
@@ -337,7 +441,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             GetStringValue(request.Files.First().Value).ShouldEqual("some test content");
@@ -360,7 +464,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             request.Files.First().Key.ShouldEqual("fieldname");
@@ -389,7 +493,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
             
             // Then
             ((string)request.Form.name).ShouldEqual("John Doe");
@@ -525,7 +629,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, memory, "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             memory.Position.ShouldEqual(0L);
@@ -548,7 +652,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             memory.Position.ShouldEqual(0L);
@@ -572,7 +676,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, CreateRequestStream(memory), "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, CreateRequestStream(memory), headers);
 
             // Then
             ((string)request.Form.age).ShouldEqual("32,42,52");
@@ -605,7 +709,7 @@ namespace Nancy.Tests.Unit
                 };
 
             // When
-            var request = new Request("POST", "/", headers, memory, "http");
+            var request = new Request("POST", new Url { Path = "/", Scheme = "http" }, memory, headers);
 
             // Then
             ((IEnumerable<string>)request.Form.GetDynamicMemberNames()).Count().ShouldEqual(StaticConfiguration.RequestQueryFormMultipartLimit);
@@ -628,7 +732,7 @@ namespace Nancy.Tests.Unit
             var memory = CreateRequestStream();
 
             // When
-            var request = new Request("GET", "/", new Dictionary<string, IEnumerable<string>>(), memory, "http", sb.ToString());
+            var request = new Request("GET", new Url { Path = "/", Scheme = "http", Query = sb.ToString() }, memory, new Dictionary<string, IEnumerable<string>>());
 
             // Then
             ((IEnumerable<string>)request.Query.GetDynamicMemberNames()).Count().ShouldEqual(StaticConfiguration.RequestQueryFormMultipartLimit);
