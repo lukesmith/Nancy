@@ -3,15 +3,14 @@
         <title>Razor View Engine Demo</title>
     </head>
     <body>
-        <h1>CSharp razor helpers</h1>
+        <h1>VB razor helpers</h1>
     
         @Render("Render from page helper")
     
-        @CodeHelper.Render("Hello world")
+        @VBCodeHelper.Render("Hello world")
     </body>
 </html>
 
-@helper Render(string text)
-{
-    <p>@text</p>
-}
+@Helper Render(text as String)
+    @<p>@text</p>
+End Helper

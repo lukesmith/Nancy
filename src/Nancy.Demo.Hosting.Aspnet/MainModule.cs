@@ -105,9 +105,14 @@ namespace Nancy.Demo.Hosting.Aspnet
 
             Get["/razor2"] = _ => new Razor2();
 
-            Get["/razor-helpers"] = _ =>
+            Get["/razor-cs-helpers"] = _ =>
             {
                 return View["razor-helpers.cshtml"];
+            };
+
+            Get["/razor-vb-helpers"] = _ =>
+            {
+                return View["razor-helpers.vbhtml"];
             };
 
             Get["/ssve"] = x =>

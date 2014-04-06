@@ -117,8 +117,10 @@
     <Content Include="Views\negotiatedview.cshtml" />
     <Content Include="Views\razor2.cshtml" />
     <Content Include="Views\nustachePartial.nustache" />
-    <Content Include="App_Code\CodeHelper.cshtml" />
+    <None Include="App_Code\CodeHelper.cshtml" />
     <Content Include="Views\razor-helpers.cshtml" />
+    <None Include="App_Code\VBCodeHelper.vbhtml1" />
+    <None Include="Views\razor-helpers.vbhtml" />
     <None Include="Views\FileUpload.sshtml">
       <SubType>Designer</SubType>
     </None>

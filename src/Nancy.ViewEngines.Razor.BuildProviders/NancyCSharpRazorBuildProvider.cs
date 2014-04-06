@@ -42,7 +42,7 @@
         {
             assemblyBuilder.AddCodeCompileUnit(this, this.GetGeneratedCode());
             
-            assemblyBuilder.GenerateTypeFactory(string.Format(CultureInfo.InvariantCulture, "{0}.{1}", new object[] { this.host.DefaultNamespace, this.host.DefaultClassName }));
+            assemblyBuilder.GenerateTypeFactory(string.Format(CultureInfo.InvariantCulture, "{0}.{1}", new object[] { this.Host.DefaultNamespace, this.Host.DefaultClassName }));
         }
 
         /// <summary>
@@ -52,7 +52,7 @@
         /// <param name="results">The compilation results for the build provider's virtual path.</param>
         public override Type GetGeneratedType(CompilerResults results)
         {
-            return results.CompiledAssembly.GetType(string.Format(CultureInfo.CurrentCulture, "{0}.{1}", new object[] { this.host.DefaultNamespace, this.host.DefaultClassName }));
+            return results.CompiledAssembly.GetType(string.Format(CultureInfo.CurrentCulture, "{0}.{1}", new object[] { this.Host.DefaultNamespace, this.Host.DefaultClassName }));
         }
 
         private RazorEngineHost Host
@@ -76,7 +76,7 @@
                 GeneratorResults results;
                 using (var reader = this.OpenReader())
                 {
-                    results = engine.GenerateCode(reader);
+                    results = engine.GenerateCode(reader, this.Host.DefaultClassName, this.Host.DefaultNamespace, this.VirtualPath);
                 }
 
                 if (!results.Success)
